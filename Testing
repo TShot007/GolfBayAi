@@ -1,0 +1,517 @@
+app GolfBayAi {
+  wasp: {
+    version: "^0.13.0"
+  },
+  title: "GolfBayAi",
+  client: {
+    rootComponent: import { Layout } from "@src/Layout.jsx"
+  },
+  db: {
+    prisma: {
+      clientPreviewFeatures: ["extendedWhereUnique"]
+    }
+  },
+  auth: {
+    userEntity: User,
+    methods: {
+      usernameAndPassword: {}
+    },
+    onAuthFailedRedirectTo: "/login",
+    onAuthSucceededRedirectTo: "/"
+  }
+}
+route LoginRoute { path: "/login", to: LoginPage }
+page LoginPage {
+  component: import Login from "@src/pages/auth/Login.jsx"
+}
+route SignupRoute { path: "/signup", to: SignupPage }
+page SignupPage {
+  component: import Signup from "@src/pages/auth/Signup.jsx"
+}
+entity User {=psl
+  id Int @id @default(autoincrement())
+  profile GolferProfile @relation(fields: [profileId], references: [id])
+  profileId Int
+  Rounds Rounds[]
+  SwingVideo SwingVideo[]
+  Drill Drill[]
+psl=}
+entity GolferProfile {=psl
+  id Int @id @default(autoincrement())
+  userId Int @unique
+  rounds Rounds[]
+  swingVideos SwingVideo[]
+  drills Drill[]
+  User User[]
+psl=}
+entity Rounds {=psl
+  id Int @id @default(autoincrement())
+  score Int
+  course Course @relation(fields: [courseId], references: [id])
+  courseId Int
+  user User @relation(fields: [userId], references: [id])
+  userId Int
+  GolferProfile GolferProfile? @relation(fields: [golferProfileId], references: [id])
+  golferProfileId Int
+psl=}
+entity SwingVideo {=psl
+  id Int @id @default(autoincrement())
+  videoUrl String
+  feedback String
+  user User @relation(fields: [userId], references: [id])
+  userId Int
+  GolferProfile GolferProfile? @relation(fields: [golferProfileId], references: [id])
+  golferProfileId Int
+psl=}
+entity Drill {=psl
+  id Int @id @default(autoincrement())
+  description String
+  videoUrl String
+  user User @relation(fields: [userId], references: [id])
+  userId Int
+  GolferProfile GolferProfile? @relation(fields: [golferProfileId], references: [id])
+  golferProfileId Int
+psl=}
+entity Course {=psl
+  id Int @id @default(autoincrement())
+  name String
+  location String
+  teetimes Teetime[]
+  Rounds Rounds[]
+psl=}
+entity Teetime {=psl
+  id Int @id @default(autoincrement())
+  time DateTime
+  available Boolean @default(true)
+  course Course @relation(fields: [courseId], references: [id])
+  courseId Int
+psl=}
+action createProfile {
+  fn: import { createProfile } from "@src/actions.js",
+  entities: [User, GolferProfile]
+}
+action addSwingVideo {
+  fn: import { addSwingVideo } from "@src/actions.js",
+  entities: [User, GolferProfile, SwingVideo]
+}
+action reserveTeetime {
+  fn: import { reserveTeetime } from "@src/actions.js",
+  entities: [User, Course, Teetime]
+}
+query getProfile {
+  fn: import { getProfile } from "@src/queries.js",
+  entities: [User, GolferProfile]
+}
+query getAvailableTeetimes {
+  fn: import { getAvailableTeetimes } from "@src/queries.js",
+  entities: [Course, Teetime]
+}
+route ProfileRoute { path: "/profile/:userId", to: ProfilePage }
+page ProfilePage {
+  component: import ProfilePage from "@src/pages/Profile.jsx",
+  authRequired: true
+}
+route CourseRoute { path: "/course/:courseId", to: CoursePage }
+page CoursePage {
+  component: import CoursePage from "@src/pages/Course.jsx",
+  authRequired: false
+}
+route DashboardRoute { path: "/", to: DashboardPage }
+page DashboardPage {
+  component: import DashboardPage from "@src/pages/Dashboard.jsx",
+  authRequired: true
+}
+{
+  "name": "GolfBayAi",
+  "dependencies": {
+    "wasp": "file:.wasp/out/sdk/wasp",
+    "react": "^18.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.1.0",
+    "vite": "^4.3.9",
+    "@types/react": "^18.0.37",
+    "prisma": "4.16.2"
+  }
+}
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+const { resolveProjectPath } = require('wasp/dev')
+const colors = require('tailwindcss/colors')
+
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    resolveProjectPath('./src/**/*.{js,jsx,ts,tsx}'),
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50:  colors.orange[50],
+          100: colors.orange[100],
+          200: colors.orange[200],
+          300: colors.orange[300],
+          400: colors.orange[400],
+          500: colors.orange[500],
+          600: colors.orange[600],
+          700: colors.orange[700],
+          800: colors.orange[800],
+          900: colors.orange[900],
+        }
+      }
+    },
+  },
+}
+const { resolveProjectPath } = require('wasp/dev')
+const colors = require('tailwindcss/colors')
+
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    resolveProjectPath('./src/**/*.{js,jsx,ts,tsx}'),
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50:  colors.orange[50],
+          100: colors.orange[100],
+          200: colors.orange[200],
+          300: colors.orange[300],
+          400: colors.orange[400],
+          500: colors.orange[500],
+          600: colors.orange[600],
+          700: colors.orange[700],
+          800: colors.orange[800],
+          900: colors.orange[900],
+        }
+      }
+    },
+  },
+}
+import { HttpError } from 'wasp/server'
+
+export const createProfile = async ({ userId }, context) => {
+  if (!context.user) { throw new HttpError(401) };
+
+  return context.entities.GolferProfile.create({
+    data: { userId }
+  });
+}
+
+export const addSwingVideo = async (arg, context) => {
+  if (!context.user) { throw new HttpError(401) };
+  const newSwingVideo = await context.entities.SwingVideo.create({
+    data: {
+      videoUrl: arg.videoUrl,
+      feedback: arg.feedback,
+      userId: arg.userId,
+      golferProfileId: context.user.profileId
+    }
+  });
+  return newSwingVideo;
+}
+
+export const reserveTeetime = async (arg, context) => {
+  if (!context.user) { throw new HttpError(401) };
+
+  const teetime = await context.entities.Teetime.findUnique({
+    where: { id: arg.teetimeId }
+  });
+  if (!teetime.available) { throw new HttpError(400, 'Teetime is not available for reservation') };
+
+  await context.entities.User.findUnique({
+    where: { id: arg.userId }
+  });
+  await context.entities.Course.findUnique({
+    where: { id: arg.courseId }
+  });
+
+  return context.entities.Teetime.update({
+    where: { id: arg.teetimeId },
+    data: { available: false }
+  });
+}
+import { Link } from "react-router-dom";
+import { useAuth, logout } from "wasp/client/auth";
+import { getUsername } from "wasp/auth";
+import "./Main.css";
+
+export const Layout = ({ children }) => {
+  const { data: user } = useAuth();
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      <header className="bg-primary-800 text-white p-4">
+        <div className="container mx-auto px-4 py-2 flex justify-between">
+          <Link to="/">
+            <h1 className="text-xl2 font-semibold">GolfBayAi</h1>
+          </Link>
+          { user ? (
+            <span>
+              Hi, {getUsername(user)}!{' '}
+              <button onClick={logout} className="text-xl2 underline">
+                (Log out)
+              </button>
+            </span>
+          ) : (
+            <Link to="/login">
+              <h1 className="text-xl2 underline">Log in</h1>
+            </Link>
+          )}
+        </div>
+      </header>
+      <main className="container mx-auto px-4 py-2 flex-grow">
+        {children}
+      </main>
+      <footer>
+        <div className="container mx-auto p-4">
+          <p className="text-center text-gray-500 text-sm">
+            GolfBayAi ~ Powered by Wasp
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
+};
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --auth-form-brand: theme(colors.primary.500);
+  --auth-form-brand-accent: theme(colors.primary.600);
+  --auth-form-submit-button-text-color: theme(colors.white);
+}
+import { HttpError } from 'wasp/server'
+
+export const getProfile = async ({ userId }, context) => {
+  const golferProfile = await context.entities.GolferProfile.findUnique({
+    where: { userId },
+    include: { User: true, Rounds: true, SwingVideo: true, Drill: true }
+  });
+
+  if (!golferProfile) throw new HttpError(404, `GolferProfile not found for userId ${userId}`);
+
+  return golferProfile;
+}
+
+export const getAvailableTeetimes = async ({ courseId }, context) => {
+  if (!context.user) { throw new HttpError(401) }
+  const teetimes = await context.entities.Teetime.findMany({
+    where: { available: true, courseId }
+  });
+  return teetimes;
+}
+import { HttpError } from 'wasp/server'
+
+export const getProfile = async ({ userId }, context) => {
+  const golferProfile = await context.entities.GolferProfile.findUnique({
+    where: { userId },
+    include: { User: true, Rounds: true, SwingVideo: true, Drill: true }
+  });
+
+  if (!golferProfile) throw new HttpError(404, `GolferProfile not found for userId ${userId}`);
+
+  return golferProfile;
+}
+
+export const getAvailableTeetimes = async ({ courseId }, context) => {
+  if (!context.user) { throw new HttpError(401) }
+  const teetimes = await context.entities.Teetime.findMany({
+    where: { available: true, courseId }
+  });
+  return teetimes;
+}
+import React, { useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { useQuery, useAction, getAvailableTeetimes, reserveTeetime } from 'wasp/client/operations';
+
+const CoursePage = () => {
+  const { courseId } = useParams();
+
+  const { data: teetimes, isLoading, error } = useQuery(getAvailableTeetimes, { courseId });
+  const reserveTeetimeFn = useAction(reserveTeetime);
+
+  if (isLoading) return 'Loading...';
+  if (error) return 'Error: ' + error;
+
+  const handleReserveTeetime = (teetimeId) => {
+    reserveTeetimeFn({ teetimeId, userId: 12345, courseId: courseId });
+  };
+
+  return (
+    <div className='p-4'>
+      {teetimes.map((teetime) => (
+        <div key={teetime.id} className='flex items-center justify-between bg-gray-100 p-4 mb-4 rounded-lg'>
+          <div>{teetime.time}</div>
+          <div>{teetime.available ? 'Available' : 'Not Available'}</div>
+          <button
+            onClick={() => handleReserveTeetime(teetime.id)}
+            className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'>
+            Reserve
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default CoursePage;
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useQuery, getProfile, getAvailableTeetimes } from 'wasp/client/operations';
+
+const DashboardPage = () => {
+  const { data: profile, isLoading: profileLoading, error: profileError } = useQuery(getProfile);
+  const { data: teetimes, isLoading: teetimesLoading, error: teetimesError } = useQuery(getAvailableTeetimes);
+
+  if (profileLoading || teetimesLoading) return 'Loading...';
+  if (profileError || teetimesError) return 'Error: ' + (profileError || teetimesError);
+
+  return (
+    <div className='p-4'>
+      <div className='mb-4'>
+        <h1 className='text-2xl font-bold mb-2'>Golfer Profile</h1>
+        <p><strong>User ID:</strong> {profile.id}</p>
+        <p><strong>Rounds:</strong> {profile.Rounds.length}</p>
+        <p><strong>Swing Videos:</strong> {profile.SwingVideo.length}</p>
+        <p><strong>Drills:</strong> {profile.Drill.length}</p>
+      </div>
+      <div>
+        <h1 className='text-2xl font-bold mb-2'>Available Tee Times</h1>
+        {teetimes.map((teetime) => (
+          <div key={teetime.id} className='bg-gray-100 p-4 mb-4 rounded-lg'>
+            <div>{teetime.time}</div>
+            <div>{teetime.available ? 'Available' : 'Not Available'}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default DashboardPage;
+import React, { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { getProfile, addSwingVideo } from 'wasp/client/operations';
+
+const ProfilePage = () => {
+  const { userId } = useParams();
+  const [profile, setProfile] = useState(null);
+  const [newSwingVideoUrl, setNewSwingVideoUrl] = useState('');
+  const [newSwingVideoFeedback, setNewSwingVideoFeedback] = useState('');
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const fetchedProfile = await getProfile({ userId });
+        setProfile(fetchedProfile);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    };
+    fetchProfile();
+  }, [userId]);
+
+  const handleAddSwingVideo = () => {
+    addSwingVideo({ videoUrl: newSwingVideoUrl, feedback: newSwingVideoFeedback, userId: userId })
+      .then((newVideo) => {
+        setNewSwingVideoUrl('');
+        setNewSwingVideoFeedback('');
+      })
+      .catch((error) => console.error('Error adding swing video:', error));
+  };
+
+  return (
+    <div className='p-4'>
+      {profile ? (
+        <div>
+          <h1>{profile.User.username}'s Profile</h1>
+          <h2>SwingVideos:</h2>
+          <ul>
+            {profile.SwingVideo.map((video) => (
+              <li key={video.id}>
+                <p>{video.videoUrl}</p>
+                <p>{video.feedback}</p>
+              </li>
+            ))}
+          </ul>
+          <div>
+            <input type='text' value={newSwingVideoUrl} onChange={(e) => setNewSwingVideoUrl(e.target.value)} />
+            <input type='text' value={newSwingVideoFeedback} onChange={(e) => setNewSwingVideoFeedback(e.target.value)} />
+            <button onClick={handleAddSwingVideo}>Add Swing Video</button>
+          </div>
+        </div>
+      ) : (
+        <p>Loading...</p>
+      )}
+    </div>
+  );
+}
+
+export default ProfilePage;
+import React, { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { getProfile, addSwingVideo } from 'wasp/client/operations';
+
+const ProfilePage = () => {
+  const { userId } = useParams();
+  const [profile, setProfile] = useState(null);
+  const [newSwingVideoUrl, setNewSwingVideoUrl] = useState('');
+  const [newSwingVideoFeedback, setNewSwingVideoFeedback] = useState('');
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const fetchedProfile = await getProfile({ userId });
+        setProfile(fetchedProfile);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    };
+    fetchProfile();
+  }, [userId]);
+
+  const handleAddSwingVideo = () => {
+    addSwingVideo({ videoUrl: newSwingVideoUrl, feedback: newSwingVideoFeedback, userId: userId })
+      .then((newVideo) => {
+        setNewSwingVideoUrl('');
+        setNewSwingVideoFeedback('');
+      })
+      .catch((error) => console.error('Error adding swing video:', error));
+  };
+
+  return (
+    <div className='p-4'>
+      {profile ? (
+        <div>
+          <h1>{profile.User.username}'s Profile</h1>
+          <h2>SwingVideos:</h2>
+          <ul>
+            {profile.SwingVideo.map((video) => (
+              <li key={video.id}>
+                <p>{video.videoUrl}</p>
+                <p>{video.feedback}</p>
+              </li>
+            ))}
+          </ul>
+          <div>
+            <input type='text' value={newSwingVideoUrl} onChange={(e) => setNewSwingVideoUrl(e.target.value)} />
+            <input type='text' value={newSwingVideoFeedback} onChange={(e) => setNewSwingVideoFeedback(e.target.value)} />
+            <button onClick={handleAddSwingVideo}>Add Swing Video</button>
+          </div>
+        </div>
+      ) : (
+        <p>Loading...</p>
+      )}
+    </div>
+  );
+}
+
+export default ProfilePage;
